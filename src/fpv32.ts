@@ -1091,7 +1091,7 @@ export class Memory implements IMemory {
    * @returns {Float32Array}
    */
   public m4(): Float32Array {
-    return bind_v4(this.context, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    return bind_m4(this.context, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
   }
 }
 
