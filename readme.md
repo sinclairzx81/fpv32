@@ -22,7 +22,7 @@ fpv32 is written with typescript 2.0.2.
 ```
 npm install typescript@2.0.2
 tsc -p tsconfig.json
-node bin/bench/bench.js
+node bin/bench/index.js
 ```
 
 ## performance through cache
