@@ -6,6 +6,6 @@
     "noImplicitAny": true
   }, 
   "files": [
-    "./bench/bench.ts"
+    "./bench/index.ts"
   ]
 }

@@ -8,7 +8,7 @@ This project is a highly optimized vector and matrix math library
 for JavaScript. This project intends to serve as a test case for attaining 
 fast floating point math performance from within a JavaScript environment
 and outlines a particular strategy for attaining high performance with a very low 
-memory footprint.
+memory footprint though memory caching.
 
 This project makes heavy use the Float32Array type, but the concepts outlined
 in this project could be extended to any JavaScript typed array.
@@ -27,31 +27,38 @@ node bin/bench/bench.js
 
 ## performance through cache
 
-fpv32 internally utilizes a small memory cache (an array of Float32Array buffers). 
-This cache is allocated up front when creating a fpv32 context. From here, all vector instances 
-created from the context are written to the cache. Once stored, an internal cache pointer is 
-cycled. Pretty simple. (see below)
+fpv32 looks at memory allocation as a primary bottleneck to good performance. 
+fpv32 provides two memory allocator types, "Memory" (which allocates new Float32Array 
+instances for each vector as usual) and the "MemoryCache" (a finite preallocated cache 
+of Float32Array buffers).
 
-![alt tag](./bench/slides.gif)
+Users who just want vector math without considerations for optimization should consider the Memory
+allocator, however, for performance, users can opt into the MemoryCache which trades some ease of use
+and safety for high performance.
 
-Because memory is allocated up front, this approach requires 0 memory allocation
-during a runtime. This alone provides dramatic performance gains over allocating new GC
-instances for each new math value. Additional performance is had from all math operations
-being preformed on Float32 typed arrays.
+### MemoryCache overview
 
-A notable downside however, is that memory is extremely volatile in the cache. Users of this 
-approach should allocate external buffers to store transient values that are needed to persist 
-longer than the calculation.
+![alt tag](./docs/slides.gif)
+
+Using the MemoryCache means all memory will be preallocated up front. This mitigates
+the need to allocate new instances at runtime (making it extremely quick), but at the 
+cost of only allowing a finite set of registers to preform a given calculation. (see image)
+
+Because of the volatility of the MemoryCache, implementations should consider using the cache
+in scenarions where a calculation can run, have the value copied out of the cache. Cache sizes
+can be configured as needed.
 
 ## example
 
 Below demonstrates using the library. 
 
 ```javascript
-let context  = new fpv32.Context(4096)
 
-let output = new Float32Array([0, 0, 0])
+let memory   = new fpv32.MemoryCache(16) // 16 registers
+let context  = new fpv32.Context(memory)
+let output   = new Float32Array([0, 0, 0])
 
+// run calculation.
 let a   = context.v3(0, 1, 0)  
 let b   = context.v3(1, 0, 0)  
 let c   = a.cross(b)           
@@ -67,8 +74,9 @@ project for 100 million iterations of the listed operations and capturing
 the elapsed time for each. 
 
 The benchmark was run on node v6.7.0 on a AMD FX 8350 @ 4Ghz
+
 ``` 
-running benchmark:
+benchmark : MemoryCache
 iterations: 100000000
 cachesize : 64
   f32()                - elapsed: 615ms    heap: 11.04 MB  used: 5.96 MB
